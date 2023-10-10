@@ -18,15 +18,15 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/iqtumg/terraform-jenkins-pipeline.git'
             }
         }
-        stage('Terraform init') {
+        stage('Terraform Init') {
             steps {
-                sh 'terraform init'
+                sh 'cd terraform-jenkins-pipeline && terraform init'
             }
         }
         stage('Plan') {
             steps {
-                sh 'terraform plan -out tfplan'
-                sh 'terraform show -no-color tfplan > tfplan.txt'
+                sh 'cd terraform-jenkins-pipeline && terraform plan -out=tfplan'
+                sh 'cd terraform-jenkins-pipeline && terraform show -no-color tfplan > tfplan.txt'
             }
         }
         stage('Apply / Destroy') {
@@ -34,20 +34,19 @@ pipeline {
                 script {
                     if (params.action == 'apply') {
                         if (!params.autoApprove) {
-                            def plan = readFile 'tfplan.txt'
+                            def plan = readFile 'terraform-jenkins-pipeline/tfplan.txt'
                             input message: "Do you want to apply the plan?",
                             parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                         }
 
-                        sh 'terraform ${action} -input=false tfplan'
+                        sh 'cd terraform-jenkins-pipeline && terraform apply -input=false tfplan'
                     } else if (params.action == 'destroy') {
-                        sh 'terraform ${action} --auto-approve'
+                        sh 'cd terraform-jenkins-pipeline && terraform destroy -auto-approve'
                     } else {
                         error "Invalid action selected. Please choose either 'apply' or 'destroy'."
                     }
                 }
             }
         }
-
     }
 }
